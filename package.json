@@ -1,0 +1,19 @@
+{
+  "author": "Thaddée Tyl",
+  "name": "base32check-user-study",
+  "description": "User study for data copy errors",
+  "version": "0.1.0",
+  "homepage": "https://thefiletree.com:8232",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/espadrine/base32check-user-study"
+  },
+  "license": "AGPL-3.0",
+  "scripts": {
+    "test": "make test"
+  },
+  "dependencies": {
+    "camp": "~17.2.2",
+    "fsos": "~1.1.3"
+  }
+}
