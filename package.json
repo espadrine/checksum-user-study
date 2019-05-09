@@ -13,7 +13,7 @@
     "test": "make test"
   },
   "dependencies": {
-    "camp": "~17.2.2",
+    "camp": "~17.2.3",
     "fsos": "~1.1.3"
   }
 }
