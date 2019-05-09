@@ -4,8 +4,8 @@ const { Study, Submission } = require('./model');
 (async function() {
   const study = await Study.load();
 
-  const port = +process.env.HTTP_PORT || 58623;
-  const corsOrigin = process.env.HTTP_CORS_ORIGIN || 'http://localhost';
+  const port = +process.env.HTTP_PORT;
+  const corsOrigins = process.env.HTTP_CORS_ORIGINS.split(',');
   const sc = camp.start({port, secure: process.env.HTTPS_ENABLED === 'true'});
   console.log('http://[::1]:' + port);
 
