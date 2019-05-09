@@ -1,13 +1,16 @@
 const camp = require('camp');
 const { Study, Submission } = require('./model');
+const settings = require('./.settings.json');
 
 (async function() {
   const study = await Study.load();
 
-  const port = +process.env.HTTP_PORT;
-  const corsOrigins = process.env.HTTP_CORS_ORIGINS.split(',');
-  const sc = camp.start({port, secure: process.env.HTTPS_ENABLED === 'true'});
-  console.log('http://[::1]:' + port);
+  const port = settings.http.port;
+  const hostname = settings.http.hostname;
+  const protocol = settings.http.protocol;
+  const corsOrigins = settings.http.cors.origins;
+  const sc = camp.start({port, secure: settings.http.protocol === "https"});
+  console.log(`${protocol}://${hostname}:${port}`);
 
   sc.post('/submissions', (req, res) => {
     req.setEncoding('utf8');

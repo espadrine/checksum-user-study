@@ -1,0 +1,14 @@
+{
+  "http": {
+    "protocol": "http",
+    "hostname": "[::1]",
+    "port": 58623,
+    "cors": {
+      "origins": [
+        "http://localhost:58623",
+        "http://127.0.0.1:58623",
+        "http://[::1]:58623"
+      ]
+    }
+  }
+}

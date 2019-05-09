@@ -262,7 +262,7 @@ class Test {
 
 const fsos = require('fsos');
 
-const filePath = './study.json';
+const filePath = './store/study.json';
 
 Study.prototype.save = function() {
   return fsos.set(filePath, JSON.stringify(this));
