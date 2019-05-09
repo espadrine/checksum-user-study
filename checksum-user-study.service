@@ -1,0 +1,9 @@
+[Unit]
+Description=Checksum User Study
+
+[Service]
+ExecStart=/home/dom/checksum-user-study/run
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
