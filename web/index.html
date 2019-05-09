@@ -5,10 +5,17 @@
 <h1> Checksum User Study </h1>
 
 <form id=studyForm action='javascript:void 0'>
-  <p><strong><output class=bits>Number</output></strong> bits of <strong><output class=alphabet>alphabet</output></strong>
+  <p><strong><output class=bitsOutput>Number</output></strong> bits of
+     <strong><output class=alphabetOutput>alphabet</output></strong>
   <div class=expectedDiv>Loading…</div>
   <input name=studyInput>
-  <div class=instructionsNode>Enter the text you see above.</div>
+  <div class=entryPromptNode>Enter the text you see above.</div>
+  <div class=submissionPromptNode>Press Enter to submit this answer.</div>
+  <div class=awaitEnoughSubmissionPromptNode>
+    Once you submit 50 entries, the statistics across all participants will be
+    included as well. You are at
+    <strong><output class=countEntriesOutput>0</output> entries</strong>.
+  </div>
 </form>
 <div id=showError></div>
 <div id=alphabetStatistics></div>
@@ -274,15 +281,18 @@ class Test {
   class StudyForm {
     constructor(form) {
       this.form = form;
-      this.input =           studyForm.studyInput;
-      this.expectedDiv =     studyForm.getElementsByClassName('expectedDiv')[0];
-      this.instructionsNode = studyForm.getElementsByClassName('instructionsNode')[0];
-      this.bitsOutput =      studyForm.getElementsByClassName('bits')[0];
-      this.alphabetOutput =  studyForm.getElementsByClassName('alphabet')[0];
+      this.input = this.form.studyInput;
+      [ 'expectedDiv', 'bitsOutput', 'alphabetOutput', 'entryPromptNode',
+        'submissionPromptNode', 'awaitEnoughSubmissionPromptNode',
+        'countEntriesOutput' ]
+      .forEach(className => {
+        this[className] = this.form.getElementsByClassName(className)[0];
+      });
       this.input.addEventListener('input', () => this.setInstructions());
       this.form.addEventListener('submit', () => this.submit());
 
       this.listeners = new Map();
+      this.setInstructions();
     }
 
     prepareTest() {
@@ -294,13 +304,22 @@ class Test {
     }
 
     setInstructions() {
-      let suggestion = '';
       if (this.input.value.length > 0) {
-        suggestion = 'Press Enter to submit this answer.';
+        this.entryPromptNode     .style.display = 'none';
+        this.submissionPromptNode.style.display = 'block';
       } else {
-        suggestion = 'Enter the text you see above.';
+        this.entryPromptNode     .style.display = 'block';
+        this.submissionPromptNode.style.display = 'none';
       }
-      this.instructionsNode.textContent = suggestion;
+
+      const totalEntries = Object.values(submission.total)
+        .reduce((a, e) => a + e);
+      if (totalEntries > 3 && totalEntries < 50) {
+        this.countEntriesOutput.value = totalEntries;
+        this.awaitEnoughSubmissionPromptNode.style.display = 'block';
+      } else {
+        this.awaitEnoughSubmissionPromptNode.style.display = 'none';
+      }
     }
 
     submit() {
