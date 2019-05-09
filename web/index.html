@@ -29,7 +29,7 @@ const alphabets = {
   base58: `123456789ABCDEFGHJKLMNOPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz`,
   base64: `ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_`,
   // Imaginary; codes 10 bits in 3 characters (42% efficient)
-  base1024: [...(function*() {for (let a of 'bdfghjklmnprstvz') for (let b of 'aeio') for (let c of 'bdfghjklmnprstvz') yield a+b+c; })()],
+  base1024: [...(function*() {for (const a of 'bdfghjklmnprstvz') for (const b of 'aeio') for (const c of 'bdfghjklmnprstvz') yield a+b+c; })()],
 };
 
 const alphabetNames = Object.keys(alphabets);
@@ -48,38 +48,46 @@ function isValidAlphabet(a) {
   return alphabetNames.some(alphabet => alphabet === a);
 }
 
-// submissions: [Submission {
+// submissions: {<user>: Submission {
 //   user, total: { <alphabet>: count },
 //   errors: [TranscriptionError {
 //     input, type,
 //     test: Test { alphabet, bits, expected }
-//   ]}]
-// statistics: {alphabet: {total, outcomes: {<outcome>: {count}}}}
+//   ]}}
+// statistics: {<alphabet>: {total, outcomes: {<outcome>: {count}}}}
 class Study {
-  constructor(submissions = []) {
-    this.submissions = submissions;
+  constructor(submissions = {}) {
+    this.submissions = Object.fromEntries(
+      Object.entries(submissions).map(([k, v]) => [k, new Submission(v)]));
     this.statistics = Object.create(null);
     this.buildStatistics();
   }
 
   add(submission) {
-    this.submissions.push(submission);
+    if (this.submissions[submission.user] !== undefined) {
+      this.revertStatistics(this.submissions[submission.user]);
+    }
     this.updateStatistics(submission);
+    this.submissions[submission.user] = new Submission(submission);
   }
 
   buildStatistics() {
     this.resetStatistics();
-    this.submissions.forEach(s => this.updateStatistics(s));
+    Object.values(this.submissions).forEach(s => this.updateStatistics(s));
   }
 
-  updateStatistics(submission) {
+  revertStatistics(submission) {
+    this.updateStatistics(submission, -1);
+  }
+
+  updateStatistics(submission, diff = 1) {
     const errorTypes = submission.errors.reduce(
       (acc, e) => acc.add(e.type), new Set());
     const outcomes = ['no error', ...errorTypes];
 
     // Add new error types to statistics.
-    for (let type of outcomes) {
-      for (let [alphabet, stat] of this.statistics) {
+    for (const type of outcomes) {
+      for (const [alphabet, stat] of Object.entries(this.statistics)) {
         if (stat.outcomes[type] === undefined) {
           stat.outcomes[type] = {count: 0};
         }
@@ -91,15 +99,15 @@ class Study {
     const alphabetErrors = Object.fromEntries(alphabetNames.map(n => [n, 0]));
 
     // Update the error statistics.
-    for (let error of submission.errors) {
-      this.statistics[error.test.alphabet].outcomes[error.type].count++;
+    for (const error of submission.errors) {
+      this.statistics[error.test.alphabet].outcomes[error.type].count += diff;
       alphabetErrors[error.test.alphabet]++;
     }
 
-    for (let alphabet of alphabetNames) {
+    for (const alphabet of alphabetNames) {
       this.statistics[alphabet].outcomes['no error'].count +=
-        submission.total[alphabet] - alphabetErrors[alphabet];
-      this.statistics[alphabet].total += submission.total[alphabet];
+        diff * (submission.total[alphabet] - alphabetErrors[alphabet]);
+      this.statistics[alphabet].total += diff * submission.total[alphabet];
     }
   }
 
@@ -113,8 +121,9 @@ class Submission {
   constructor(post) {
     if (!(post instanceof Object)) { post = Object.create(null); }
     this.user = post.user;
-    this.total = post.total;
-    this.errors = post.errors.map(e => new TranscriptionError(e.input, e.test));
+    this.total = Object.assign(Object.create(null), post.total);
+    this.errors = (post.errors || [])
+      .map(e => new TranscriptionError(e.input, e.test));
   }
 
   addEntry(input, test) {
@@ -125,8 +134,8 @@ class Submission {
   }
 
   validate() {
-    const errors = [];
-    if (!(this.user instanceof String)) {
+    let errors = [];
+    if (typeof this.user !== 'string') {
       errors.push({code: 'invalid_type', message: 'user is not a string'});
     } else if (this.user.length < 20) {
       errors.push({code: 'invalid_type', message: 'user is not long enough'});
@@ -134,7 +143,7 @@ class Submission {
       errors.push({code: 'invalid_type', message: 'user is too long'});
     }
     if (!Object.keys(this.total).every(a => isValidAlphabet(a)
-          && (this.total[a] instanceof Number))) {
+          && (typeof this.total[a] === 'number'))) {
       errors.push({code: 'invalid_type', message: 'total contains elements of the wrong format'});
     }
     const errorsValidation = this.errors.flatMap(e => e.validate());
@@ -192,8 +201,8 @@ class TranscriptionError {
   }
 
   validate() {
-    const errors = [];
-    if (!(this.input instanceof String)) {
+    let errors = [];
+    if (typeof this.input !== 'string') {
       errors.push({code: 'invalid_type', message: 'error input is not a string'});
     } else if (this.input.length > 200) {
       errors.push({code: 'invalid_type', message: 'error input is too long'});
@@ -238,15 +247,15 @@ class Test {
 
   validate() {
     const errors = [];
-    if (!(this.alphabet instanceof String)) {
+    if (typeof this.alphabet !== 'string') {
       errors.push({code: 'invalid_type', message: 'test alphabet is not a string'});
     } else if (!isValidAlphabet(this.alphabet)) {
       errors.push({code: 'invalid_type', message: 'test alphabet is unknown'});
     }
-    if (!(this.bits instanceof Number)) {
+    if (typeof this.bits !== 'number') {
       errors.push({code: 'invalid_type', message: 'test bits are not a number'});
     }
-    if (!(this.expected instanceof String)) {
+    if (typeof this.expected !== 'string') {
       errors.push({code: 'invalid_type', message: 'expected test input is not a string'});
     } else if (this.expected.length > 200) {
       errors.push({code: 'invalid_type', message: 'expected test input is too long'});
@@ -333,36 +342,34 @@ class Test {
   }
 
   class AlphabetStatistics {
-    constructor(dom, stats) {
+    constructor(dom, submission) {
       this.dom = dom;
       this.data = this.data || {};
-      this.data.stats = stats;
+      this.data.study = new Study(
+        Object.fromEntries([[submission.user, submission]]));
     }
 
-    update(stats) {
-      this.data.stats = stats;
+    update(submission) {
+      this.data.study.add(submission);
       this.render();
     }
 
     render() {
-      const stats = this.data.stats;
-      const errorTypes = ['no error', ...stats.errors.reduce((acc, e) => acc.add(e.type), new Set())];
-      const countErrorForAlphabet = (alphabet, errorType) =>
-        (errorType === 'no error')
-          ? stats.total[alphabet] - stats.errors.filter(e => e.test.alphabet === alphabet).length
-          : stats.errors.filter(e => e.test.alphabet === alphabet && e.type === errorType).length;
-
-      const rows = alphabetNames.filter(a => stats.total[a] > 0)
-      .map(alphabet => errorTypes.map(errorType => ({
-        alphabet, errorType, count: countErrorForAlphabet(alphabet, errorType), total: stats.total[alphabet]
-      })))
-      // [[{alphabet, errorType, count}]]
+      const stats = this.data.study.statistics;
+      const combineOutcomes = (acc, as) =>
+        new Set([...acc, ...Object.keys(as.outcomes)]);
+      const outcomes = [...Object.values(stats)
+        .reduce(combineOutcomes, new Set())];
 
       const header = '<tr><th>Alphabets</th><th>'
-        + errorTypes.map(escapeHTML).join('<th>');
-      const tableContent = '<tr>' + rows.map(row =>
-        `<th>${row[0].alphabet}<td>` + row.map(cell => escapeHTML(`${(cell.count / cell.total * 100).toFixed(2)}%`)).join('<td>'))
-      .join('<tr>');
+        + outcomes.map(escapeHTML).join('<th>');
+      const tableContent = '<tr>' + Object.keys(stats).map(a => {
+        const as = stats[a];
+        const aos = outcomes.map(o => as.outcomes[o].count / as.total * 100);
+        const cells = aos.map(i => `${i.toFixed(2)}%`);;
+        return `<th>${escapeHTML(a)}<td>` + cells.map(escapeHTML).join('<td>');
+      }).join('<tr>');
+
       this.dom.innerHTML = `<table>${header}${tableContent}</table>`;
     }
   }
