@@ -1,6 +1,5 @@
 {
   "http": {
-    "protocol": "http",
     "hostname": "[::1]",
     "port": 58623,
     "cors": {

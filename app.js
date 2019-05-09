@@ -7,9 +7,10 @@ const settings = require('./.settings.json');
 
   const port = settings.http.port;
   const hostname = settings.http.hostname;
-  const protocol = settings.http.protocol;
+  const protocol = settings.http.tls? 'https': 'http';
+  const {key, cert, ca} = settings.http.tls || {};
   const corsOrigins = settings.http.cors.origins;
-  const sc = camp.start({port, secure: settings.http.protocol === "https"});
+  const sc = camp.start({ port, secure: !!settings.http.tls, key, cert, ca });
   console.log(`${protocol}://${hostname}:${port}`);
 
   sc.post('/submissions', (req, res) => {
