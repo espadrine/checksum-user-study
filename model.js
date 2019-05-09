@@ -208,28 +208,17 @@ function genPayload(size, alphabet) {
   return payload;
 }
 
-let testBitSize = 64;
-let currentAlphabetIdx = Math.floor(Math.random() * alphabetNames.length);
-
 class Test {
   constructor(test) {
-    if (test === undefined) {
-      this.generate();
-    } else {
-      this.alphabet = test.alphabet;
-      this.bits = test.bits;
-      this.expected = test.expected;
-    }
+    this.bits = test.bits || 64;
+    this.alphabet = test.alphabet || 'base10';
+    this.expected = test.expected || this.generate();
   }
 
   generate() {
-    this.alphabet = alphabetNames[currentAlphabetIdx];
-    currentAlphabetIdx = (currentAlphabetIdx + 1) % alphabetNames.length;
-    this.bits = testBitSize;
-    //testBitSize = testBitSize + 8;
-    if (testBitSize > 128) { testBitSize = 64; }
     const size = symbolCountToEncode(this.bits, this.alphabet);
     this.expected = genPayload(size, this.alphabet);
+    return this.expected;
   }
 
   validate() {
