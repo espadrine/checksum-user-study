@@ -133,6 +133,10 @@ class Submission {
     }
   }
 
+  totalEntries() {
+    return Object.values(this.total).reduce((a, e) => a + e);
+  }
+
   validate() {
     let errors = [];
     if (typeof this.user !== 'string') {
@@ -276,6 +280,8 @@ class Test {
     errors: [],
   });
 
+  const submissionBatchSize = 50;
+
   class StudyForm {
     constructor(form) {
       this.form = form;
@@ -312,9 +318,8 @@ class Test {
         this.submissionPromptNode.style.display = 'none';
       }
 
-      const totalEntries = Object.values(submission.total)
-        .reduce((a, e) => a + e);
-      if (totalEntries > 3 && totalEntries < 50) {
+      const totalEntries = submission.totalEntries();
+      if (totalEntries > 3 && totalEntries < submissionBatchSize) {
         this.countEntriesOutput.value = totalEntries;
         this.awaitEnoughSubmissionPromptNode.style.display = 'block';
       } else {
@@ -342,20 +347,44 @@ class Test {
   }
 
   class AlphabetStatistics {
-    constructor(dom, submission) {
+    constructor(dom, {submission}) {
       this.dom = dom;
       this.data = this.data || {};
       this.data.study = new Study(
         Object.fromEntries([[submission.user, submission]]));
+      this.data.overallStats = null;
     }
 
     update(submission) {
       this.data.study.add(submission);
+
+      const totalEntries = submission.totalEntries();
+      if (totalEntries >= submissionBatchSize) {
+        downloadStudyStatistics().then(stats => {
+          this.data.overallStats = stats;
+          this.render();
+        }).catch(e => { throw e });
+      }
+
       this.render();
     }
 
+    combinedStats() {
+      // Poor folk's cloning. FIXME: do rich folk's cloning.
+      const stats = JSON.parse(JSON.stringify(this.data.study.statistics));
+      if (this.data.overallStats !== null) {
+        for (const [alphabet, stat] of Object.entries(this.data.overallStats)) {
+          stats[alphabet].total += stat.total;
+          for (const [outcome, value] of Object.entries(stat.outcomes)) {
+            stats[alphabet].outcomes[outcome].count += value.count;
+          }
+        }
+      }
+      return stats;
+    }
+
     render() {
-      const stats = this.data.study.statistics;
+      const stats = this.combinedStats();
       const combineOutcomes = (acc, as) =>
         new Set([...acc, ...Object.keys(as.outcomes)]);
       const outcomes = [...Object.values(stats)
@@ -363,7 +392,9 @@ class Test {
 
       const header = '<tr><th>Alphabets</th><th>'
         + outcomes.map(escapeHTML).join('<th>');
-      const tableContent = '<tr>' + Object.keys(stats).map(a => {
+      const usedAlphabets = Object.keys(stats)
+        .filter(a => stats[a].total > 0);
+      const tableContent = '<tr>' + usedAlphabets.map(a => {
         const as = stats[a];
         const aos = outcomes.map(o => as.outcomes[o].count / as.total * 100);
         const cells = aos.map(i => `${i.toFixed(2)}%`);;
@@ -383,9 +414,10 @@ class Test {
     loadUserStudy(submission);
     const studyForm = new StudyForm(document.getElementById('studyForm'));
     studyForm.prepareTest();
-    const alphabetStatistics = new AlphabetStatistics(document.getElementById('alphabetStatistics'), submission);
+    const alphabetStatistics = new AlphabetStatistics(
+      document.getElementById('alphabetStatistics'), {submission});
     if (alphabetNames.some(a => submission.total[a] > 0)) { alphabetStatistics.update(submission); }
-    studyForm.on('submit', event => alphabetStatistics.update(event.submission));
+    studyForm.on('submit', () => alphabetStatistics.update(submission));
     studyForm.on('submit', () => storeUserStudy(submission));
     studyForm.on('submit', () => sendUserStudy(submission));
   }
@@ -419,13 +451,20 @@ class Test {
     return newUser;
   }
 
+  const userStudyHost = 'http://localhost:58623';
+
   function sendUserStudy(submission) {
-    fetch('http://localhost:58623/submissions', {
+    fetch(userStudyHost + '/submissions', {
       method: 'POST',
       mode: 'cors',
       body: JSON.stringify({submission}),
       headers: {'Content-Type': 'application/json'},
     })
     .catch(e => console.error('Failed sending base32check user study submission:', e));
+  }
+
+  function downloadStudyStatistics() {
+    return fetch(userStudyHost + '/statistics', {mode: 'cors'})
+      .then(res => res.json());
   }
 </script>

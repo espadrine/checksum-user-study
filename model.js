@@ -34,7 +34,8 @@ function isValidAlphabet(a) {
 // statistics: {<alphabet>: {total, outcomes: {<outcome>: {count}}}}
 class Study {
   constructor(submissions = {}) {
-    this.submissions = submissions;
+    this.submissions = Object.fromEntries(
+      Object.entries(submissions).map(([k, v]) => [k, new Submission(v)]));
     this.statistics = Object.create(null);
     this.buildStatistics();
   }
@@ -44,7 +45,7 @@ class Study {
       this.revertStatistics(this.submissions[submission.user]);
     }
     this.updateStatistics(submission);
-    this.submissions[submission.user] = submission;
+    this.submissions[submission.user] = new Submission(submission);
   }
 
   buildStatistics() {
@@ -97,7 +98,7 @@ class Submission {
   constructor(post) {
     if (!(post instanceof Object)) { post = Object.create(null); }
     this.user = post.user;
-    this.total = post.total;
+    this.total = Object.assign(Object.create(null), post.total);
     this.errors = (post.errors || [])
       .map(e => new TranscriptionError(e.input, e.test));
   }
@@ -107,6 +108,10 @@ class Submission {
     if (test.expected !== input) {
       this.errors.push(new TranscriptionError(input, test));
     }
+  }
+
+  totalEntries() {
+    return Object.values(this.total).reduce((a, e) => a + e);
   }
 
   validate() {
