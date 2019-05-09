@@ -34,11 +34,7 @@ const settings = require('./.settings.json');
         return res.json({errors});
       }
       study.add(submission);
-      const origin = req.headers.origin;
-      if (origin === corsOrigin) {
-        res.setHeader('Access-Control-Allow-Origin', origin);
-      }
-      res.end();
+      res.json({submission});
       await study.save();
 
     })().catch(e => {
@@ -49,6 +45,18 @@ const settings = require('./.settings.json');
       }]});
     });
   });
+  sc.options('/submissions', (req, res) => res.end());
 
   sc.get('/statistics', (req, res) => res.json(study.statistics));
+
+  sc.handle((req, res, next) => {
+    const origin = req.headers.origin;
+    if (corsOrigins.some(o => o === origin)) {
+      res.setHeader('Access-Control-Allow-Origin', origin);
+      res.setHeader('Access-Control-Allow-Methods', 'OPTIONS, GET, POST');
+      res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    }
+    next();
+  });
 })()
+.catch(e => console.error(e.stack));
