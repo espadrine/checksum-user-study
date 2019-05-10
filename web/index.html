@@ -21,6 +21,8 @@
 <div id=alphabetStatistics></div>
 
 <script>
+(function() {
+
 const alphabets = {
   base10: `0123456789`,
   base16: `0123456789abcdef`,
@@ -451,7 +453,9 @@ class Test {
     return newUser;
   }
 
-  const userStudyHost = 'http://localhost:58623';
+  const userStudyHost = (window.location.hostname === 'espadrine.github.io')
+    ? 'https://thefiletree.com:58623'
+    : window.location.origin;
 
   function sendUserStudy(submission) {
     fetch(userStudyHost + '/submissions', {
@@ -467,4 +471,5 @@ class Test {
     return fetch(userStudyHost + '/statistics', {mode: 'cors'})
       .then(res => res.json());
   }
+}());
 </script>
