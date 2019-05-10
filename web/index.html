@@ -5,22 +5,26 @@
 <h1> Checksum User Study </h1>
 
 <form id=studyForm action='javascript:void 0'>
-  <p><strong><output class=bitsOutput>Number</output></strong> bits of
-     <strong><output class=alphabetOutput>alphabet</output></strong>
-  <div class=expectedDiv>Loading…</div>
+  <p>
+    <strong><output class=bitsOutput>Number</output></strong> bits of
+      <strong><output class=alphabetOutput>alphabet</output></strong>
+  </p>
+  <span class=expectedDiv>Loading…</span>
   <input name=studyInput>
-  <div class=entryPromptNode>Enter the text you see above.</div>
+  <div class=entryPromptNode>
+    Enter the text you see on the left.
+  </div>
   <div class=submissionPromptNode>Press Enter to submit this answer.</div>
-  <div class=awaitEnoughSubmissionPromptNode>
+  <p class=awaitEnoughSubmissionPromptNode>
     Once you submit 50 entries, the statistics across all participants will be
     included as well. You are at
     <strong><output class=countEntriesOutput>0</output> entries</strong>.
-  </div>
-  <div class=reachedEnoughSubmissionPromptNode>
+  </p>
+  <p class=reachedEnoughSubmissionPromptNode>
     You have submitted enough entries: the statistics you now see below include
     entries from all participants. You can still submit more entries to continue
     helping the study.
-  </div>
+  </p>
 </form>
 <div id=showError></div>
 <div id=alphabetStatistics></div>
@@ -327,9 +331,13 @@ class Test {
       }
 
       const totalEntries = submission.totalEntries();
-      if (totalEntries > 3 && totalEntries < submissionBatchSize) {
-        this.countEntriesOutput.value = totalEntries;
-        this.awaitEnoughSubmissionPromptNode.style.display = 'block';
+      if (totalEntries < submissionBatchSize) {
+        if (totalEntries > 3) {
+          this.countEntriesOutput.value = totalEntries;
+          this.awaitEnoughSubmissionPromptNode.style.display = 'block';
+        } else {
+          this.awaitEnoughSubmissionPromptNode.style.display = 'none';
+        }
         this.reachedEnoughSubmissionPromptNode.style.display = 'none';
       } else {
         this.awaitEnoughSubmissionPromptNode.style.display = 'none';
