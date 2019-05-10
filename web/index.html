@@ -16,6 +16,11 @@
     included as well. You are at
     <strong><output class=countEntriesOutput>0</output> entries</strong>.
   </div>
+  <div class=reachedEnoughSubmissionPromptNode>
+    You have submitted enough entries: the statistics you now see below include
+    entries from all participants. You can still submit more entries to continue
+    helping the study.
+  </div>
 </form>
 <div id=showError></div>
 <div id=alphabetStatistics></div>
@@ -291,7 +296,7 @@ class Test {
       this.input = this.form.studyInput;
       [ 'expectedDiv', 'bitsOutput', 'alphabetOutput', 'entryPromptNode',
         'submissionPromptNode', 'awaitEnoughSubmissionPromptNode',
-        'countEntriesOutput' ]
+        'countEntriesOutput', 'reachedEnoughSubmissionPromptNode' ]
       .forEach(className => {
         this[className] = this.form.getElementsByClassName(className)[0];
       });
@@ -325,8 +330,10 @@ class Test {
       if (totalEntries > 3 && totalEntries < submissionBatchSize) {
         this.countEntriesOutput.value = totalEntries;
         this.awaitEnoughSubmissionPromptNode.style.display = 'block';
+        this.reachedEnoughSubmissionPromptNode.style.display = 'none';
       } else {
         this.awaitEnoughSubmissionPromptNode.style.display = 'none';
+        this.reachedEnoughSubmissionPromptNode.style.display = 'block';
       }
     }
 
